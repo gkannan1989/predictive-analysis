@@ -1,0 +1,32 @@
+event_id,collector_tstamp,event_name,domain_userid,session_id,page_urlpath,element_id,form_id,error_message
+user1_A1,2025-06-08T10:00:00Z,page_view,user_active_1,session_active_1_1,/q/usa/usa/business/,,,\
+user1_A2,2025-06-08T10:01:00Z,form_question_answered,user_active_1,session_active_1_1,/q/usa/usa/business/,,form_biz_data,\
+user1_A3,2025-06-08T10:02:00Z,page_view,user_active_1,session_active_1_1,/q/usa/usa/business_split/,,,\
+user1_A4,2025-06-08T10:03:00Z,pageset_section_changed,user_active_1,session_active_1_1,/q/usa/usa/business_split/,,,\
+user1_A5,2025-06-09T11:00:00Z,page_view,user_active_1,session_active_1_2,/q/usa/usa/your_employees/,,,\
+user1_A6,2025-06-09T11:01:30Z,form_question_answered,user_active_1,session_active_1_2,/q/usa/usa/your_employees/,,form_employees_data,\
+user1_A7,2025-06-10T09:00:00Z,page_view,user_active_1,session_active_1_3,/q/usa/usa/quote_comparison/,,,\
+user1_A8,2025-06-10T09:01:00Z,click,user_active_1,session_active_1_3,/q/usa/usa/quote_comparison/,select_quote_btn,,\
+user2_C1,2025-03-05T09:00:00Z,page_view,user_churned_1,session_churn_1_1,/q/usa/usa/business_split/,,,\
+user2_C2,2025-03-05T09:00:30Z,invalid_field_submitted,user_churned_1,session_churn_1_1,/q/usa/usa/business_split/,field_biz_name,,Invalid characters\
+user2_C3,2025-03-05T09:00:45Z,help_text_opened,user_churned_1,session_churn_1_1,/q/usa/usa/business_split/,help_biz_name,,\
+user2_C4,2025-03-05T09:01:00Z,form_error,user_churned_1,session_churn_1_1,/q/usa/usa/business_split/,,form_biz_details,Required field missing\
+user2_C5,2025-03-05T09:01:30Z,help_text_opened,user_churned_1,session_churn_1_1,/q/usa/usa/business_split/,help_required_field,,\
+user2_C6,2025-03-05T09:02:00Z,page_view,user_churned_1,session_churn_1_1,/help/faq,,,\
+user2_C7,2025-03-05T09:03:00Z,page_view,user_churned_1,session_churn_1_1,/q/usa/usa/business_split/,,,\
+user2_C8,2025-03-05T09:03:30Z,invalid_field_submitted,user_churned_1,session_churn_1_1,/q/usa/usa/business_split/,field_tax_id,,Invalid format\
+user2_C9,2025-03-05T09:03:45Z,tooltip_viewed,user_churned_1,session_churn_1_1,/q/usa/usa/business_split/,tooltip_tax_id,,\
+user2_C10,2025-03-05T09:04:00Z,form_error,user_churned_1,session_churn_1_1,/q/usa/usa/business_split/,,form_biz_details,Submission failed\
+user2_C11,2025-03-05T09:04:30Z,page_view,user_churned_1,session_churn_1_1,/contact_us,,,\
+user2_C12,2025-03-05T09:05:30Z,page_view,user_churned_1,session_churn_1_1,/q/usa/usa/your_employees/,,,\
+user2_C13,2025-03-05T09:06:00Z,invalid_field_submitted,user_churned_1,session_churn_1_1,/q/usa/usa/your_employees/,field_emp_count,,Value too high\
+user2_C14,2025-03-05T09:06:15Z,help_text_opened,user_churned_1,session_churn_1_1,/q/usa/usa/your_employees/,help_emp_limit,,\
+user2_C15,2025-03-05T09:07:00Z,page_view,user_churned_1,session_churn_1_1,/dashboard,,,\
+user3_A1,2025-05-20T14:00:00Z,page_view,user_active_2,session_active_2_1,/homepage,,,\
+user3_A2,2025-05-20T14:01:00Z,click,user_active_2,session_active_2_1,/homepage,promo_banner,,\
+user3_A3,2025-05-25T09:00:00Z,page_view,user_active_2,session_active_2_2,/dashboard,,,\
+user3_A4,2025-05-25T09:00:30Z,pageset_section_changed,user_active_2,session_active_2_2,/dashboard,,,\
+user4_C1,2025-04-01T10:00:00Z,page_view,user_churned_2,session_churn_2_1,/homepage,,,\
+user4_C2,2025-04-01T10:00:30Z,click,user_churned_2,session_churn_2_1,/homepage,learn_more_button,,\
+user4_C3,2025-04-01T10:01:00Z,page_view,user_churned_2,session_churn_2_1,/blog/latest-article,,,\
+user4_C4,2025-04-01T10:02:00Z,pageset_section_changed,user_churned_2,session_churn_2_1,/blog/latest-article,,,\

@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+scikit-learn
+pandas
+joblib
+requests
+bs4
+selenium
