@@ -147,7 +147,7 @@ if DRIVER_PATH and not os.path.exists(DRIVER_PATH):
 SITES_TO_SCRAPE = [
     {'name': 'Insureon GL', 'url': 'https://www.insureon.com/small-business-insurance/general-liability/cost'},
     {'name': 'Forbes WC', 'url': 'https://www.forbes.com/advisor/business-insurance/workers-compensation-insurance-cost/'},
-    {'name': 'TechInsurance WC', 'url': 'https://www.techinsurance.com/workers-compensation-insurance/cost'}
+    #{'name': 'TechInsurance WC', 'url': 'https://www.techinsurance.com/workers-compensation-insurance/cost'}
 ]
 
 # --- Helper function for cleaning price strings ---
@@ -244,7 +244,8 @@ def scrape_forbes_wc_cost(driver, url):
     
     driver.get(url)
     try:
-        table_container_selector = (By.CSS_SELECTOR, 'div.body-table-wrapper')
+        # Wait for the tbody of the first table to be present
+        table_container_selector = (By.CSS_SELECTOR, 'div.body-table-wrapper table.table-simple tbody')
         
         WebDriverWait(driver, 20).until(
             EC.presence_of_element_located(table_container_selector)
@@ -253,34 +254,41 @@ def scrape_forbes_wc_cost(driver, url):
         html_content = driver.page_source
         soup = BeautifulSoup(html_content, 'html.parser')
 
+        # The following selectors are for the first table structure
         cost_table = soup.find('div', class_='body-table-wrapper').find('table', class_='table-simple')
-
+        print(cost_table)
         if cost_table:
             header_cols = [] # Not strictly needed if we just grab last column, but good for debugging
-            tbody = cost_table.find('tbody')
+            tbody = cost_table.find('tbody') # This should now reliably be found
             if tbody:
                 rows = tbody.find_all('tr')
                 for row in rows:
                     cols = row.find_all('td')
-                    if len(cols) > 1:
+                    # The first table usually has State and Cost (e.g., 2 columns)
+                    # Or State and multiple cost columns, where -1 might be the most recent.
+                    if len(cols) > 1: 
                         state = cols[0].get_text(strip=True)
-                        latest_year_cost = clean_price_string(cols[-1].get_text(strip=True))
+                        # Assuming cost is in the last column for the first table.
+                        # If it's consistently the second column, cols[1] would be more direct.
+                        latest_year_cost_text = cols[-1].get_text(strip=True)
+                        latest_year_cost = clean_price_string(latest_year_cost_text)
                             
                         if state and latest_year_cost is not None:
                             scraped_data.append({
                                 'source': 'Forbes Advisor',
                                 'insurance_type': 'Workers Compensation',
-                                'metric': 'Cost per $100 Payroll',
+                                # Adjusted metric for the first table (actual content may vary)
+                                'metric': 'Median Cost per $100 Payroll (First Table)', 
                                 'state': state,
                                 'cost': latest_year_cost,
                                 'url': url
                             })
                     else:
-                        print(f"Forbes: Skipping row with unexpected number of columns: {len(cols)}")
+                        print(f"Forbes (First Table): Skipping row with unexpected number of columns: {len(cols)}")
             else:
-                print("Forbes: Table body (tbody) not found.")
+                print("Forbes (First Table): Table body (tbody) not found in parsed HTML.")
         else:
-            print("Forbes: Cost table not found with expected classes inside the wrapper.")
+            print("Forbes (First Table): Cost table (div.body-table-wrapper table.table-simple) not found in parsed HTML.")
     except Exception as e:
         print(f"Error scraping Forbes Advisor: {e}")
     return scraped_data
