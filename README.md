@@ -30,6 +30,11 @@ python app/churn_model.py
 ```
 
 4. Start the API server
+
+Use this command if your ui part is not setup yet : `python3 app/app.py`
+
+Once UI part is set up you can use the below one:
+
 ```bash
 uvicorn app.api:app --reload
 ```
