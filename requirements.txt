@@ -6,3 +6,5 @@ joblib
 requests
 bs4
 selenium
+flask
+flask_cors
