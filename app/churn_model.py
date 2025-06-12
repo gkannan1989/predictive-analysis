@@ -55,7 +55,6 @@ def featurize_user_data(user_events_df, current_time_for_features):
 
             # Initialize features with defaults
             # This dictionary must contain all expected feature names
-            # (including 'days_since_last_activity' which was discussed)
             features = {
                 'total_page_views': 0,
                 'total_clicks': 0,

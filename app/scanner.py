@@ -299,7 +299,7 @@ def scrape_nextinsurance_coverage(
             driver.quit()
 
 # --- Generic Flask Route ---
-@app.route('/scrape-insurance', methods=['POST'])
+@app.route('/insurance-price-scanner', methods=['POST'])
 def scrape_insurance():
     """
     Generic API endpoint to scrape insurance quotes from different providers.
