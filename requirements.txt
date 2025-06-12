@@ -8,3 +8,4 @@ bs4
 selenium
 flask
 flask_cors
+webdriver-manager

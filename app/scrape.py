@@ -1,154 +1,38 @@
-# import requests
-# from bs4 import BeautifulSoup
-# import time
-# import random
-# import re
-# import csv
-
-# def scrape_static_insurance_prices(url, insurance_type):
-#     """
-#     Scrapes a specific insurance price from a static landing page.
-
-#     Args:
-#         url (str): The URL of the static landing page.
-#         insurance_type (str): 'general_liability' or 'workers_compensation'
-#                               (used for identifying which price to look for).
-
-#     Returns:
-#         dict: A dictionary with 'url', 'insurance_type', and 'price',
-#               or None if the price isn't found or an error occurs.
-#     """
-#     headers = {
-#         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-#     }
-
-#     try:
-#         print(f"Fetching {url} for {insurance_type}...")
-#         response = requests.get(url, headers=headers, timeout=10)
-#         response.raise_for_status() # Raise an HTTPError for bad responses (4xx or 5xx)
-#     except requests.exceptions.RequestException as e:
-#         print(f"Error fetching {url}: {e}")
-#         return None
-
-#     soup = BeautifulSoup(response.text, 'html.parser')
-#     price = None
-
-#     # --- CUSTOMIZE THESE SELECTORS BASED ON ACTUAL WEBSITE HTML ---
-#     if insurance_type == 'general_liability':
-#         # Example 1: Price inside a span with a specific class within a GL section
-#         gl_section = soup.find('div', {'class': 'tableWrap_k1scE'}) # Adjust ID
-#         if gl_section:
-#             price_element = gl_section.find('td') # Adjust class
-#             if price_element:
-#                 price = price_element.get_text()
-        
-#         # Example 2: Price directly in a p tag with a specific text
-#         if not price: # If not found by example 1, try example 2
-#             price_element = soup.find('p', string=re.compile(r'General Liability starting from'))
-#             if price_element:
-#                 # Assuming the price is right after "from $"
-#                 match = re.search(r'\$(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)', price_element.get_text())
-#                 if match:
-#                     price = match.group(1)
-
-#     elif insurance_type == 'workers_compensation':
-#         # Example 1: Price inside a specific div with a WC class
-#         wc_div = soup.find('div', class_='workers-comp-quote-box') # Adjust class
-#         if wc_div:
-#             price_element = wc_div.find('strong', class_='monthly-cost') # Adjust tag and class
-#             if price_element:
-#                 price = price_element.get_text()
-        
-#         # Example 2: Price in a data attribute
-#         if not price:
-#             price_element = soup.find('div', {'data-insurance-type': 'workers-compensation'})
-#             if price_element and 'data-price' in price_element.attrs:
-#                 price = price_element['data-price']
-
-#     # --- END CUSTOMIZATION ---
-
-#     if price:
-#         # Clean the price string (remove $, commas, whitespace) and convert to float
-#         cleaned_price = float(re.sub(r'[$,\s]', '', price))
-#         print(f"Found price for {insurance_type}: ${cleaned_price:.2f}")
-#         return {'url': url, 'insurance_type': insurance_type, 'price': cleaned_price}
-#     else:
-#         print(f"No price found for {insurance_type} on {url}")
-#         return None
-
-# if __name__ == "__main__":
-#     # Define your list of URLs to scrape
-#     # IMPORTANT: Replace these with actual URLs of static pages you find
-#     # and adjust the selectors in the scrape_static_insurance_prices function accordingly.
-#     target_pages = [
-#         {"url": "https://www.thehartford.com/general-liability-insurance", "type": "general_liability"},
-#         {"url": "https://www.progressivecommercial.com/business-insurance/general-liability-insurance/", "type": "general_liability"},
-#         {"url": "https://www.geico.com/workers-compensation-insurance/", "type": "workers_compensation"},
-#         # Add more URLs as you discover static price points
-#         {"url": "https://www.insureon.com/small-business-insurance/general-liability/cost", "type": "general_liability"},
-#         # {"url": "https://www.another-insurer.com/wc-average-costs", "type": "workers_compensation"},
-#     ]
-
-#     all_scraped_data = []
-
-#     for page_info in target_pages:
-#         scraped_data = scrape_static_insurance_prices(page_info['url'], page_info['type'])
-#         if scraped_data:
-#             all_scraped_data.append(scraped_data)
-
-#         # Be polite: introduce a random delay between requests
-#         delay = random.uniform(3, 8) # Random delay between 3 and 8 seconds
-#         print(f"Waiting for {delay:.2f} seconds...")
-#         time.sleep(delay)
-
-#     # Output the results
-#     if all_scraped_data:
-#         print("\n--- All Scraped Prices ---")
-#         for data in all_scraped_data:
-#             print(f"Type: {data['insurance_type'].replace('_', ' ').title()}, Price: ${data['price']:.2f}, URL: {data['url']}")
-
-#         # Optionally save to a CSV file
-#         csv_file = 'us_insurance_prices.csv'
-#         with open(csv_file, 'w', newline='', encoding='utf-8') as f:
-#             fieldnames = ['url', 'insurance_type', 'price']
-#             writer = csv.DictWriter(f, fieldnames=fieldnames)
-#             writer.writeheader()
-#             writer.writerows(all_scraped_data)
-#         print(f"\nScraped data saved to {csv_file}")
-#     else:
-#         print("\nNo prices were successfully scraped.")
-from flask import Flask, jsonify, request
+# app.py
+from flask import Flask, request, jsonify
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from bs4 import BeautifulSoup
-import re
-import csv # Not directly used in API response, but useful for understanding the scraping output format
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service as ChromeService
+from webdriver_manager.chrome import ChromeDriverManager
 import time
-import random
-import os # For checking driver path
+import re
+from bs4 import BeautifulSoup
+import os
 
 app = Flask(__name__)
 
-# --- Configuration ---
-# IMPORTANT: Set this to the actual path of your chromedriver.exe (or geckodriver.exe)
-# If chromedriver is in your system's PATH, you can leave driver_path=None
-# Example: DRIVER_PATH = "C:/webdrivers/chromedriver.exe"
-# Example: DRIVER_PATH = "/usr/local/bin/chromedriver"
-DRIVER_PATH = None # Set this if your driver is not in PATH
-
-# Ensure the driver exists if a custom path is provided
-if DRIVER_PATH and not os.path.exists(DRIVER_PATH):
-    raise FileNotFoundError(f"ChromeDriver not found at: {DRIVER_PATH}. Please check the path.")
-
-# Define the sites to scrape with their respective URLs and names
-SITES_TO_SCRAPE = [
-    {'name': 'Insureon GL', 'url': 'https://www.insureon.com/small-business-insurance/general-liability/cost'},
-    {'name': 'Forbes WC', 'url': 'https://www.forbes.com/advisor/business-insurance/workers-compensation-insurance-cost/'},
-    {'name': 'TechInsurance WC', 'url': 'https://www.techinsurance.com/workers-compensation-insurance/cost'}
-]
+# --- WebDriver Initialization Helper ---
+def get_webdriver() -> webdriver.Chrome:
+    """
+    Initializes and returns a Chrome WebDriver instance configured for headless operation.
+    Uses webdriver_manager to automatically handle ChromeDriver download/management.
+    """
+    chrome_options = Options()
+    # chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--window-size=1920,1080")
+    chrome_options.add_argument("--disable-gpu")
+    
+    service = ChromeService(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service, options=chrome_options)
+    driver.maximize_window()
+    print("ChromeDriver initialized successfully via webdriver_manager.")
+    return driver
 
 # --- Helper function for cleaning price strings ---
 def clean_price_string(price_text):
@@ -164,29 +48,133 @@ def clean_price_string(price_text):
             return None
     return None
 
-# --- Selenium Driver Initialization (called per request, be mindful of resources) ---
-def get_selenium_driver():
-    options = webdriver.ChromeOptions()
-    options.add_argument('--headless')
-    options.add_argument('--disable-gpu')
-    options.add_argument('--no-sandbox')
-    options.add_argument('--disable-dev-shm-usage')
-    options.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36')
-    options.add_argument('--window-size=1920,1080')
-    options.add_argument('--ignore-certificate-errors')
+# --- Thimble Scraping Logic ---
+def scrape_thimble_insurance_coverage(
+    num_employees: int,
+    profession_text: str,
+    zip_code: str,
+    equipment_value: float = 0.0,
+    coverage_limit_value: int = 1 # 1 for $1M, 2 for $2M
+) -> dict:
+    """
+    Scrapes "Recommended coverage" from thimble.com's insurance calculator using Selenium.
+    """
+    driver = None
+    try:
+        driver = get_webdriver()
+        calculator_url = "https://www.thimble.com/insurance-calculator/"
+        print(f"Thimble: Navigating to: {calculator_url}")
+        driver.get(calculator_url)
 
-    if DRIVER_PATH:
-        service = Service(DRIVER_PATH)
-        return webdriver.Chrome(service=service, options=options)
-    else:
-        return webdriver.Chrome(options=options)
+        wait = WebDriverWait(driver, 20)
+
+        # 1. Fill 'Number of Employees'
+        try:
+            employees_input = wait.until(EC.element_to_be_clickable((By.XPATH, "//span[contains(text(), 'Number of Employees')]/ancestor::div[@class='smb-form-item']//input[@class='smb-input__inner']")))
+            employees_input.clear()
+            employees_input.send_keys(str(num_employees))
+            employees_input.send_keys(Keys.TAB)
+            time.sleep(0.5)
+            print(f"Thimble: Filled Number of Employees: {num_employees}")
+        except Exception as e:
+            print(f"Thimble: Error interacting with 'Number of Employees': {e}")
+            return {"status": "error", "message": f"Failed to fill employees on Thimble: {e}"}
+
+        # 2. Fill 'Profession'
+        try:
+            profession_input_field = wait.until(EC.element_to_be_clickable((By.XPATH, "//input[@placeholder='Handymen' and @class='smb-input__inner smb-input__inner--has-suffix']")))
+            
+            profession_input_field.click() 
+            print("Thimble: Clicked profession input field to open dropdown.")
+            
+            profession_input_field.send_keys(profession_text)
+            print(f"Thimble: Typed profession: {profession_text}")
+
+            profession_option_xpath = f"//div[@id='smbPoperRoot']//div[@class='insurance-calculator-widget__pop-option'][contains(text(), '{profession_text}')]"
+            profession_option = wait.until(EC.element_to_be_clickable((By.XPATH, profession_option_xpath)))
+            
+            profession_option.click()
+            print(f"Thimble: Selected profession '{profession_text}' from dropdown.")
+            time.sleep(1)
+        except Exception as e:
+            print(f"Thimble: Error interacting with 'Profession': {e}")
+            return {"status": "error", "message": f"Failed to fill profession on Thimble: {e}"}
+
+        # 3. Fill 'ZIP Code'
+        try:
+            zip_code_input_field = wait.until(EC.element_to_be_clickable((By.XPATH, "//input[@placeholder='90402' and @class='smb-input__inner smb-input__inner--has-suffix']")))
+            
+            zip_code_input_field.click()
+            print("Thimble: Clicked ZIP Code input field.")
+            
+            zip_code_input_field.clear()
+            zip_code_input_field.send_keys(zip_code)
+            zip_code_input_field.send_keys(Keys.RETURN)
+            time.sleep(1)
+            print(f"Thimble: Filled ZIP Code: {zip_code}")
+        except Exception as e:
+            print(f"Thimble: Error interacting with 'ZIP Code': {e}")
+            return {"status": "error", "message": f"Failed to fill ZIP code on Thimble: {e}"}
+
+        # 4. Fill 'Value of Your Equipment' (Optional)
+        if equipment_value > 0:
+            try:
+                equipment_input = wait.until(EC.element_to_be_clickable((By.XPATH, "//span[contains(text(), 'Value of Your Equipment')]/ancestor::div[@class='smb-form-item']//input[@class='smb-input__inner']")))
+                equipment_input.clear()
+                equipment_input.send_keys(str(int(equipment_value)))
+                equipment_input.send_keys(Keys.TAB)
+                time.sleep(0.5)
+                print(f"Thimble: Filled Equipment Value: ${equipment_value:,.2f}")
+            except Exception as e:
+                print(f"Thimble: Warning: Could not interact with 'Equipment Value' input: {e}")
+
+        # # 5. Select 'Coverage Limit'
+        # try:
+        #     limit_text = f"${coverage_limit_value}M"
+        #     limit_option = wait.until(EC.element_to_be_clickable((By.XPATH, f"//div[@class='smb-slider__label-item']//span[contains(text(), '{limit_text}')]/ancestor::div[@class='smb-slider__label-item']")))
+        #     limit_option.click()
+        #     time.sleep(0.5)
+        #     print(f"Thimble: Selected Coverage Limit: {limit_text}")
+        # except Exception as e:
+        #     print(f"Thimble: Error interacting with 'Coverage Limit': {e}")
+        #     return {"status": "error", "message": f"Failed to select coverage limit on Thimble: {e}"}
+
+        time.sleep(3) 
+
+        # 6. Extract "Recommended coverage" result
+        try:
+            price_span = wait.until(EC.presence_of_element_located((By.XPATH, "//div[contains(@class, 'insurance-calculator-widget__price')]//span[@class='smb-typoel smb-typo-h2']")))
+            avg_month_span = wait.until(EC.presence_of_element_located((By.XPATH, "//div[contains(@class, 'insurance-calculator-widget__price')]//span[@class='smb-typoel smb-typo-body' and contains(text(), 'Avg / Month')]")))
+            
+            price_value = price_span.get_attribute('textContent').strip()
+            coverage_text = f"{price_value} {avg_month_span.get_attribute('textContent').strip()}"
+            
+            print(f"Thimble: Scraped 'Recommended coverage': {coverage_text}")
+            return {"status": "success", "recommended_coverage": coverage_text}
+        except Exception as e:
+            print(f"Thimble: Error extracting price: {e}")
+            return {"status": "error", "message": f"Failed to extract recommended coverage on Thimble: {e}"}
+
+    except Exception as e:
+        print(f"Thimble: An overall error occurred during scraping: {e}")
+        return {"status": "error", "message": f"An unexpected error occurred on Thimble: {e}"}
+    finally:
+        if driver:
+            driver.quit() # Ensure the browser is closed even if an error occurs
 
 # --- Scraping function for Insureon ---
-def scrape_insureon_gl_cost_by_state(driver, url):
+def scrape_insureon_gl_cost_by_state(state: str):
+    url = "https://www.insureon.com/small-business-insurance/general-liability/cost"
     print(f"Scraping Insureon GL Costs from: {url}")
-    scraped_data = []
-    
+
+    driver = get_webdriver()
     driver.get(url)
+    state_input = state.lower()
+
+    # wait = WebDriverWait(driver, 20)
+    scraped_data = { "status": "failed" }
+    
+    # driver.get(url)
     try:
         table_wrap_selector = (By.CSS_SELECTOR, 'div[data-test-id="Table-Wrap"]')
         WebDriverWait(driver, 20).until(
@@ -221,14 +209,11 @@ def scrape_insureon_gl_cost_by_state(driver, url):
                                 cost = clean_price_string(cost_p.get_text(strip=True))
                         
                         if state and cost is not None:
-                            scraped_data.append({
-                                'source': 'Insureon',
-                                'insurance_type': 'General Liability',
-                                'metric': 'Cost per Month',
-                                'state': state,
-                                'cost': cost,
-                                'url': url
-                            })
+                            if state.lower() == state_input.lower():
+                                scraped_data = {
+                                    'recommended_coverage': f"${cost}/month",
+                                    "status": "success"
+                                }
             else:
                 print("Insureon: Cost table not found inside the wrapper div with expected classes.")
         else:
@@ -237,151 +222,168 @@ def scrape_insureon_gl_cost_by_state(driver, url):
         print(f"Error scraping Insureon: {e}")
     return scraped_data
 
-# --- Scraping function for Forbes Advisor ---
-def scrape_forbes_wc_cost(driver, url):
-    print(f"Scraping Forbes Advisor WC Costs from: {url}")
-    scraped_data = []
-    
-    driver.get(url)
+# --- NextInsurance Scraping Logic ---
+def scrape_nextinsurance_coverage(
+    state: str,
+    industry: str
+) -> dict:
+    """
+    Scrapes the price from nextinsurance.com's general liability calculator using Selenium.
+    """
+    driver = None
     try:
-        table_container_selector = (By.CSS_SELECTOR, 'div.body-table-wrapper')
-        
-        WebDriverWait(driver, 20).until(
-            EC.presence_of_element_located(table_container_selector)
-        )
-        
-        html_content = driver.page_source
-        soup = BeautifulSoup(html_content, 'html.parser')
+        driver = get_webdriver()
+        calculator_url = "https://www.nextinsurance.com/general-liability-insurance/calculator/"
+        print(f"NextInsurance: Navigating to: {calculator_url}")
+        driver.get(calculator_url)
 
-        cost_table = soup.find('div', class_='body-table-wrapper').find('table', class_='table-simple')
+        wait = WebDriverWait(driver, 20)
 
-        if cost_table:
-            header_cols = [] # Not strictly needed if we just grab last column, but good for debugging
-            tbody = cost_table.find('tbody')
-            if tbody:
-                rows = tbody.find_all('tr')
-                for row in rows:
-                    cols = row.find_all('td')
-                    if len(cols) > 1:
-                        state = cols[0].get_text(strip=True)
-                        latest_year_cost = clean_price_string(cols[-1].get_text(strip=True))
-                            
-                        if state and latest_year_cost is not None:
-                            scraped_data.append({
-                                'source': 'Forbes Advisor',
-                                'insurance_type': 'Workers Compensation',
-                                'metric': 'Cost per $100 Payroll',
-                                'state': state,
-                                'cost': latest_year_cost,
-                                'url': url
-                            })
-                    else:
-                        print(f"Forbes: Skipping row with unexpected number of columns: {len(cols)}")
-            else:
-                print("Forbes: Table body (tbody) not found.")
-        else:
-            print("Forbes: Cost table not found with expected classes inside the wrapper.")
-    except Exception as e:
-        print(f"Error scraping Forbes Advisor: {e}")
-    return scraped_data
-
-# --- Scraping function for TechInsurance (average cost) ---
-def scrape_techinsurance_wc_average_cost(driver, url):
-    print(f"Scraping TechInsurance WC Average Cost from: {url}")
-    scraped_data = []
-    
-    driver.get(url)
-    try:
-        article_text_div_selector = (By.CLASS_NAME, "article__text") 
-        
-        WebDriverWait(driver, 20).until(
-            EC.presence_of_element_located(article_text_div_selector)
-        )
-        
-        html_content = driver.page_source
-        soup = BeautifulSoup(html_content, 'html.parser')
-
-        article_text_div = soup.find('div', class_='article__text')
-        
-        if article_text_div:
-            average_cost_p = article_text_div.find('p', string=re.compile(r"On average, workers' compensation insurance costs"))
+        # 1. Fill 'Where is your business located? (State)'
+        try:
+            state_input = wait.until(EC.element_to_be_clickable((By.ID, "price-calculator-state")))
+            state_input.click()
+            state_input.clear()
+            state_input.send_keys(state)
+            print(f"NextInsurance: Typed state: {state}")
             
-            if average_cost_p:
-                cost_text = average_cost_p.get_text(strip=True)
-                match = re.search(r'\$?(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)\sper month', cost_text)
-                if match:
-                    average_cost = clean_price_string(match.group(1))
-                    if average_cost is not None:
-                        scraped_data.append({
-                            'source': 'TechInsurance',
-                            'insurance_type': 'Workers Compensation',
-                            'metric': 'Average Monthly Cost',
-                            'state': 'National Average',
-                            'cost': average_cost,
-                            'url': url
-                        })
-                else:
-                    print("TechInsurance: Average cost figure not found in expected format.")
-            else:
-                print("TechInsurance: Paragraph containing average cost not found within article text div.")
-        else:
-            print("TechInsurance: Article text div not found.")
+            state_option_xpath = f"//div[contains(@class, 'state-dropdown')]//*[contains(@class, 'css-') and contains(text(), '{state}')]"
+            state_option = wait.until(EC.element_to_be_clickable((By.XPATH, state_option_xpath)))
+            state_option.click()
+            print(f"NextInsurance: Clicked state option: {state}")
+            time.sleep(1)
+        except Exception as e:
+            print(f"NextInsurance: Error interacting with 'State': {e}")
+            return {"status": "error", "message": f"Failed to fill state on NextInsurance: {e}"}
+
+        # 2. Fill 'What is your industry?'
+        try:
+            industry_input = wait.until(EC.element_to_be_clickable((By.ID, "algolia-price-calculator")))
+            industry_input.click()
+            industry_input.clear()
+            industry_input.send_keys(industry)
+            print(f"NextInsurance: Typed industry: {industry}")
             
-    except Exception as e:
-        print(f"Error scraping TechInsurance: {e}")
-    return scraped_data
-
-# --- Flask API Endpoint ---
-@app.route('/scrape-insurance-prices', methods=['GET'])
-def get_insurance_prices():
-    all_scraped_data = []
-    driver = None # Initialize driver to None
-
-    try:
-        driver = get_selenium_driver() # Get a new driver instance for this request
-
-        for site_info in SITES_TO_SCRAPE:
-            site_name = site_info['name']
-            url = site_info['url']
-
-            # Add a delay between sites to be polite
-            delay = random.uniform(5, 10)
-            print(f"API: Waiting {delay:.2f} seconds before scraping {site_name}...")
-            time.sleep(delay)
-
-            if site_name == 'Insureon GL':
-                data = scrape_insureon_gl_cost_by_state(driver, url)
-            elif site_name == 'Forbes WC':
-                data = scrape_forbes_wc_cost(driver, url)
-            elif site_name == 'TechInsurance WC':
-                data = scrape_techinsurance_wc_average_cost(driver, url)
-            else:
-                print(f"API: Warning - No scraper defined for site: {site_name}")
-                data = [] # Return empty list if site not recognized
+            time.sleep(1.5)
             
-            all_scraped_data.extend(data)
+            industry_option_xpath = (
+                f"//div[@data-testid='drop-down-options']"
+                f"//div[contains(@data-testid, 'dropdown-item-cob-input') and contains(text(), '{industry}')]"
+            )
+            
+            industry_option = wait.until(EC.element_to_be_clickable((By.XPATH, industry_option_xpath)))
+            industry_option.click()
+            print(f"NextInsurance: Clicked industry option: {industry}")
+            time.sleep(1)
+        except Exception as e:
+            print(f"NextInsurance: Error interacting with 'Industry': {e}")
+            return {"status": "error", "message": f"Failed to fill industry on NextInsurance: {e}"}
         
-        return jsonify({
-            'status': 'success',
-            'data': all_scraped_data,
-            'timestamp': time.time() # Add a timestamp for freshness
-        })
+        time.sleep(3) 
+
+        # 3. Scrape the price from "data-cy="price-calculator-calculation-field-value""
+        try:
+            price_element = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "[data-cy='price-calculator-calculation-field-value']")))
+            price_text = price_element.get_attribute('textContent').strip()
+            print(f"NextInsurance: Scraped price: {price_text}")
+            return {"status": "success", "recommended_coverage": price_text}
+        except Exception as e:
+            print(f"NextInsurance: Error extracting price: {e}")
+            return {"status": "error", "message": f"Failed to extract price from NextInsurance: {e}"}
 
     except Exception as e:
-        print(f"API Error: {e}")
-        return jsonify({
-            'status': 'error',
-            'message': str(e),
-            'timestamp': time.time()
-        }), 500 # Internal Server Error
+        print(f"NextInsurance: An overall error occurred during scraping: {e}")
+        return {"status": "error", "message": f"An unexpected error occurred on NextInsurance: {e}"}
     finally:
         if driver:
-            driver.quit() # Always quit the driver
+            driver.quit()
 
-# --- Run the Flask App ---
+# --- Generic Flask Route ---
+@app.route('/scrape-insurance', methods=['POST'])
+def scrape_insurance():
+    """
+    Generic API endpoint to scrape insurance quotes from different providers.
+    Expects a JSON payload that can include parameters for one or more providers.
+    
+    Payload Structure:
+    {
+        "thimble_params": { ... },
+        "nextinsurance_params": { ... },
+        "insureon_params": { ... }
+    }
+    """
+    data = request.get_json()
+
+    if not data:
+        return jsonify({"status": "error", "message": "Request must be JSON"}), 400
+
+    response_data = {}
+    
+    # --- Handle Thimble Request ---
+    thimble_params = data.get('thimble_params')
+    if thimble_params:
+        print("\nAttempting Thimble scrape...")
+        num_employees = thimble_params.get('num_employees')
+        profession_text = thimble_params.get('profession_text')
+        zip_code = thimble_params.get('zip_code')
+        equipment_value = thimble_params.get('equipment_value', 0.0)
+        coverage_limit_value = thimble_params.get('coverage_limit_value', 1)
+
+        if not all([num_employees, profession_text, zip_code]):
+            thimble_result = {"status": "error", "message": "Missing required parameters for Thimble: num_employees, profession_text, zip_code"}
+        else:
+            try:
+                num_employees = int(num_employees)
+                equipment_value = float(equipment_value)
+                coverage_limit_value = int(coverage_limit_value)
+                thimble_result = scrape_thimble_insurance_coverage(
+                    num_employees=num_employees,
+                    profession_text=profession_text,
+                    zip_code=zip_code,
+                    equipment_value=equipment_value,
+                    coverage_limit_value=coverage_limit_value
+                )
+            except ValueError:
+                thimble_result = {"status": "error", "message": "Invalid data types for numeric fields for Thimble"}
+        response_data['thimble_result'] = thimble_result
+
+    # --- Handle NextInsurance Request ---
+    nextinsurance_params = data.get('nextinsurance_params')
+    if nextinsurance_params:
+        print("\nAttempting NextInsurance scrape...")
+        state = nextinsurance_params.get('state')
+        industry = nextinsurance_params.get('industry')
+
+        if not all([state, industry]):
+            nextinsurance_result = {"status": "error", "message": "Missing required parameters for NextInsurance: state, industry"}
+        else:
+            nextinsurance_result = scrape_nextinsurance_coverage(
+                state=state,
+                industry=industry
+            )
+        response_data['nextinsurance_result'] = nextinsurance_result
+    
+    insureon_params = data.get('insureon_params')
+    print(f"Insureon params: {insureon_params}")
+    if insureon_params:
+        print("\nAttempting Insureon scrape...")
+        state = insureon_params.get('state')
+        print(f"Insureon state: {state}")
+        response_data['insureon_result'] = scrape_insureon_gl_cost_by_state(state)
+
+    # If no provider's parameters were provided
+    if not response_data:
+        return jsonify({"status": "error", "message": "No valid provider parameters found in the request. Please provide 'thimble_params' or 'nextinsurance_params'."}), 400
+
+    # Determine overall HTTP status: 200 if at least one scrape was successful, else 500
+    overall_status = 200
+    if thimble_params and response_data.get('thimble_result', {}).get('status') == 'error':
+        overall_status = 500
+    if nextinsurance_params and response_data.get('nextinsurance_result', {}).get('status') == 'error':
+        overall_status = 500
+    
+    return jsonify(response_data), overall_status
+
+
 if __name__ == '__main__':
-    # To run: python your_script_name.py
-    # Then open your browser and go to http://127.0.0.1:5000/scrape-insurance-prices
-    # Or use curl: curl http://127.0.0.1:5000/scrape-insurance-prices
-    print("Starting Flask API. Access at http://127.0.0.1:5000/scrape-insurance-prices")
-    app.run(debug=True) # debug=True will restart server on code changes and show errors
+    app.run(debug=True, port=5000)
